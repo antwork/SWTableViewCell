@@ -56,6 +56,12 @@
 
 - (void)setUtilityButtons:(NSArray *)utilityButtons
 {
+    // if no width specified, use the default width
+    [self setUtilityButtons:utilityButtons WithButtonWidth:kUtilityButtonWidthDefault];
+}
+
+- (void)setUtilityButtons:(NSArray *)utilityButtons WithButtonWidth:(CGFloat)width
+{
     for (UIButton *button in _utilityButtons)
     {
         [button removeFromSuperview];

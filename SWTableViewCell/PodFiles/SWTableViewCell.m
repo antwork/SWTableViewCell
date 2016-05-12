@@ -28,8 +28,9 @@
 @property (nonatomic, strong) UILongPressGestureRecognizer *longPressGestureRecognizer;
 @property (nonatomic, strong) UITapGestureRecognizer *tapGestureRecognizer;
 
-- (CGFloat)leftUtilityButtonsWidth;
-- (CGFloat)rightUtilityButtonsWidth;
+@property (assign, nonatomic) CGFloat leftUtilityButtonsWidth;
+@property (assign, nonatomic) CGFloat rightUtilityButtonsWidth;
+
 - (CGFloat)utilityButtonsPadding;
 
 - (CGPoint)contentOffsetForCellState:(SWCellState)state;
@@ -173,22 +174,57 @@
     }
 }
 
+
 - (void)setLeftUtilityButtons:(NSArray *)leftUtilityButtons
 {
     _leftUtilityButtons = leftUtilityButtons;
     
-    self.leftUtilityButtonsView.utilityButtons = leftUtilityButtons;
+    if (leftUtilityButtons.count == 0) {
+        self.leftUtilityButtonsWidth = 0;
+    } else {
+        self.leftUtilityButtonsWidth = leftUtilityButtons.count * kUtilityButtonWidthDefault;
+    }
+}
+
+- (void)setLeftUtilityButtons:(NSArray *)leftUtilityButtons WithButtonWidth:(CGFloat) width
+{
+    _leftUtilityButtons = leftUtilityButtons;
     
-    [self layoutIfNeeded];
+    if (leftUtilityButtons.count == 0) {
+        self.leftUtilityButtonsWidth = 0;
+    } else {
+        CGFloat useWidth = width;
+        if (useWidth == 0) {
+            useWidth = kUtilityButtonWidthDefault;
+        }
+        self.leftUtilityButtonsWidth = leftUtilityButtons.count * useWidth;
+    }
 }
 
 - (void)setRightUtilityButtons:(NSArray *)rightUtilityButtons
 {
     _rightUtilityButtons = rightUtilityButtons;
     
-    self.rightUtilityButtonsView.utilityButtons = rightUtilityButtons;
+    if (rightUtilityButtons.count == 0) {
+        self.rightUtilityButtonsWidth = 0;
+    } else {
+        self.rightUtilityButtonsWidth = rightUtilityButtons.count * kUtilityButtonWidthDefault + self.additionalRightPadding;
+    }
+}
+
+- (void)setRightUtilityButtons:(NSArray *)rightUtilityButtons WithButtonWidth:(CGFloat) width
+{
+    _rightUtilityButtons = rightUtilityButtons;
     
-    [self layoutIfNeeded];
+    if (rightUtilityButtons.count == 0) {
+        self.rightUtilityButtonsWidth = 0;
+    } else {
+        CGFloat useWidth = width;
+        if (useWidth == 0) {
+            useWidth = kUtilityButtonWidthDefault;
+        }
+        self.rightUtilityButtonsWidth = rightUtilityButtons.count * useWidth + self.additionalRightPadding;
+    }
 }
 
 #pragma mark - UITableViewCell overrides
@@ -386,16 +422,6 @@
 
 #pragma mark - Geometry helpers
 
-- (CGFloat)leftUtilityButtonsWidth
-{
-    return self.leftUtilityButtonsView.frame.size.width;
-}
-
-- (CGFloat)rightUtilityButtonsWidth
-{
-    return self.rightUtilityButtonsView.frame.size.width + self.additionalRightPadding;
-}
-
 - (CGFloat)utilityButtonsPadding
 {
     return [self leftUtilityButtonsWidth] + [self rightUtilityButtonsWidth];
@@ -535,6 +561,15 @@
             if (self.delegate && [self.delegate respondsToSelector:@selector(swipeableTableViewCell:canSwipeToState:)])
             {
                 BOOL shouldScroll = [self.delegate swipeableTableViewCell:self canSwipeToState:kCellStateRight];
+                BOOL shouldUpdate = false;
+                if (self.rightUtilityButtons.count != self.rightUtilityButtonsView.utilityButtons.count) {
+                    shouldUpdate = true;
+                }
+                if (shouldUpdate) {
+                    CGFloat width = self.rightUtilityButtonsWidth / self.rightUtilityButtons.count;
+                    [self.rightUtilityButtonsView setUtilityButtons:self.rightUtilityButtons WithButtonWidth:width];
+                    [self layoutIfNeeded];
+                }
                 if (!shouldScroll)
                 {
                     scrollView.contentOffset = CGPointMake([self leftUtilityButtonsWidth], 0);
@@ -550,22 +585,22 @@
     else
     {
         // Expose the left button view
-        if ([self leftUtilityButtonsWidth] > 0)
-        {
-            if (self.delegate && [self.delegate respondsToSelector:@selector(swipeableTableViewCell:canSwipeToState:)])
-            {
-                BOOL shouldScroll = [self.delegate swipeableTableViewCell:self canSwipeToState:kCellStateLeft];
-                if (!shouldScroll)
-                {
-                    scrollView.contentOffset = CGPointMake([self leftUtilityButtonsWidth], 0);
-                }
-            }
-        }
-        else
-        {
-            [scrollView setContentOffset:CGPointMake(0, 0)];
-            self.tapGestureRecognizer.enabled = YES;
-        }
+//        if ([self leftUtilityButtonsWidth] > 0)
+//        {
+//            if (self.delegate && [self.delegate respondsToSelector:@selector(swipeableTableViewCell:canSwipeToState:)])
+//            {
+//                BOOL shouldScroll = [self.delegate swipeableTableViewCell:self canSwipeToState:kCellStateLeft];
+//                if (!shouldScroll)
+//                {
+//                    scrollView.contentOffset = CGPointMake([self leftUtilityButtonsWidth], 0);
+//                }
+//            }
+//        }
+//        else
+//        {
+//            [scrollView setContentOffset:CGPointMake(0, 0)];
+//            self.tapGestureRecognizer.enabled = YES;
+//        }
     }
     
     [self updateCellState];
